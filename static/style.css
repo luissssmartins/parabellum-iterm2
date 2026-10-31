@@ -1,0 +1,66 @@
+body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin: 0;
+    padding: 24px;
+    font-family: system-ui, sans-serif;
+    background: #1e1e1e;
+    color: #ddd;
+}
+
+form {
+    flex: 1;
+    min-width: 320px;
+    max-width: 520px;
+}
+
+fieldset {
+    margin-bottom: 16px;
+    border: 1px solid #444;
+    border-radius: 6px;
+}
+
+label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 6px 0;
+}
+
+input[type="text"],
+input[type="number"],
+select {
+    width: 180px;
+    padding: 4px;
+    background: #2a2a2a;
+    color: #ddd;
+    border: 1px solid #555;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 16px;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 15px;
+    background: #3a7afe;
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+#preview {
+    flex: 1;
+    align-self: flex-start;
+    min-width: 320px;
+    padding: 16px;
+    font-size: 14px;
+    white-space: pre;
+    border-radius: 8px;
+}

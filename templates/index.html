@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>iTerm2 Profile Builder</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <form method="post" action="/export">
+        <fieldset>
+            <legend>Geral</legend>
+            <label>
+                Nome
+                <input type="text" name="name" value="{{ d.name }}" required>
+            </label>
+            <label>
+                Fonte
+                <input type="text" name="font" value="{{ d.font }}">
+            </label>
+            <label>
+                Tamanho
+                <input type="number" name="size" value="{{ d.size }}" min="6" max="72">
+            </label>
+            <label>
+                Colunas
+                <input type="number" name="columns" value="{{ d.columns }}" min="10">
+            </label>
+            <label>
+                Linhas
+                <input type="number" name="rows" value="{{ d.rows }}" min="5">
+            </label>
+            <label>
+                Transparência (%)
+                <input type="number" name="transparency" value="{{ d.transparency }}" min="0" max="100">
+            </label>
+            <label>
+                Blur
+                <input type="checkbox" name="blur" {{ 'checked' if d.blur }}>
+            </label>
+            <label>
+                Cursor
+                <select name="cursor">
+                    {% for key, label in cursors.items() %}
+                    <option value="{{ key }}" {{ 'selected' if key == d.cursor }}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>
+                Cursor piscando
+                <input type="checkbox" name="blink" {{ 'checked' if d.blink }}>
+            </label>
+            <label>
+                Scrollback
+                <input type="number" name="scrollback" value="{{ d.scrollback }}" min="0">
+            </label>
+            <label>
+                Scrollback ilimitado
+                <input type="checkbox" name="unlimited" {{ 'checked' if d.unlimited }}>
+            </label>
+        </fieldset>
+
+        <fieldset>
+            <legend>Cores</legend>
+            <div class="grid">
+                {% for key, value in d.colors.items() %}
+                <label>
+                    {{ key.replace(' Color', '') }}
+                    <input type="color" name="{{ key }}" value="{{ value }}">
+                </label>
+                {% endfor %}
+            </div>
+        </fieldset>
+
+        <button type="submit">Gerar perfil JSON</button>
+    </form>
+
+    <div id="preview"></div>
+
+    <script>
+        const form = document.forms[0];
+        const preview = document.getElementById("preview");
+        const value = name => form.elements[name].value;
+
+        const fg = (index, text) =>
+            `<span style="color: ${value(`Ansi ${index} Color`)}">${text}</span>`;
+
+        const palette = offset =>
+            [...Array(8)]
+                .map((_, i) => `<span style="background: ${value(`Ansi ${i + offset} Color`)}">   </span>`)
+                .join("");
+
+        function render() {
+            preview.style.background = value("Background Color");
+            preview.style.color = value("Foreground Color");
+            preview.style.fontFamily = `"${value("font")}", monospace`;
+            preview.style.opacity = 1 - value("transparency") / 100;
+
+            preview.innerHTML = [
+                `${fg(2, "user@host")}:${fg(4, "~/projetos")}$ ls -la`,
+                `${fg(12, "drwxr-xr-x")}  ${fg(6, "src")}`,
+                `${fg(1, "error:")} algo falhou`,
+                `${fg(3, "warning:")} atenção`,
+                `<a style="color: ${value("Link Color")}">https://iterm2.com</a>`,
+                `<span style="background: ${value("Selection Color")}; color: ${value("Selected Text Color")}">texto selecionado</span>`,
+                "",
+                palette(0),
+                palette(8),
+                "",
+                `$ <span style="background: ${value("Cursor Color")}; color: ${value("Cursor Text Color")}">_</span>`,
+            ].join("\n");
+        }
+
+        form.addEventListener("input", render);
+        render();
+    </script>
+</body>
+</html>
