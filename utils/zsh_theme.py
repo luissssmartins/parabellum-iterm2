@@ -28,6 +28,8 @@ class ZshTheme:
         directory = Path(directory).expanduser()
         if not directory.is_dir():
             return []
+        if not directory.is_absolute():
+            directory = Path(__file__).parent.parent / directory
         return sorted(p.name.removesuffix(".zsh-theme") for p in directory.glob("*.zsh-theme"))
 
     @classmethod
