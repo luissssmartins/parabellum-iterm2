@@ -1,7 +1,9 @@
 import json
+import os
 import uuid
 from pathlib import Path
-from flask import Flask, Response, render_template, request
+from flask import Flask, Response, abort, jsonify, render_template, request
+from utils.zsh_theme import ZshTheme
 
 class ProfileBuilder:
     COLORS = ["Foreground Color", "Background Color", "Bold Color", "Cursor Color", "Cursor Text Color",
@@ -69,11 +71,27 @@ class ProfileBuilder:
 
 app = Flask(__name__)
 builder = ProfileBuilder(Path(__file__).with_name("parabellum.json"))
+THEMES_DIR = os.environ.get("PARABELLUM_THEMES_DIR",
+                            str(Path(__file__).resolve().parent.parent / "parabellum-zsh-theme"))
 
 
 @app.get("/")
 def index():
-    return render_template("index.html", d=builder.defaults(), cursors=builder.CURSORS)
+    return render_template("index.html", d=builder.defaults(), cursors=builder.CURSORS, themes_dir=THEMES_DIR)
+
+
+@app.get("/themes")
+def themes():
+    return jsonify(ZshTheme.list(request.args.get("dir", THEMES_DIR)))
+
+
+@app.get("/themes/<name>")
+def theme(name):
+    directory = Path(request.args.get("dir", THEMES_DIR)).expanduser()
+    if name not in ZshTheme.list(directory):
+        abort(404)
+    t = ZshTheme(directory / f"{name}.zsh-theme")
+    return jsonify({"name": t.name, "prompt": t.render()})
 
 
 @app.post("/export")

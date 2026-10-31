@@ -61,6 +61,20 @@
         </fieldset>
 
         <fieldset>
+            <legend>Tema ZSH</legend>
+            <label>
+                Pasta
+                <input type="text" id="themes-dir" value="{{ themes_dir }}">
+            </label>
+            <label>
+                Tema
+                <select id="theme">
+                    <option value="">(nenhum)</option>
+                </select>
+            </label>
+        </fieldset>
+
+        <fieldset>
             <legend>Cores</legend>
             <div class="grid">
                 {% for key, value in d.colors.items() %}
@@ -90,6 +104,46 @@
                 .map((_, i) => `<span style="background: ${value(`Ansi ${i + offset} Color`)}">   </span>`)
                 .join("");
 
+        const themesDir = document.getElementById("themes-dir");
+        const themeSelect = document.getElementById("theme");
+        let themePrompt = null;
+
+        const escape = text => text.replace(/[&<>"]/g, ch => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[ch]);
+        const color = c => typeof c === "number" ? value(`Ansi ${c} Color`) : c;
+
+        function prompt() {
+            if (!themePrompt) return `${fg(2, "user@host")}:${fg(4, "~/projetos")}$ `;
+            return themePrompt.map(s => {
+                const css = [];
+                const fgColor = s.fg !== null ? color(s.fg) : (s.bold ? value("Bold Color") : null);
+                if (fgColor) css.push(`color: ${fgColor}`);
+                if (s.bg !== null) css.push(`background: ${color(s.bg)}`);
+                if (s.bold) css.push("font-weight: bold");
+                if (s.underline) css.push("text-decoration: underline");
+                return css.length ? `<span style="${css.join("; ")}">${escape(s.text)}</span>` : escape(s.text);
+            }).join("");
+        }
+
+        async function loadThemes() {
+            let saved = null;
+            try { saved = localStorage.getItem("theme"); } catch {}
+            const names = await (await fetch(`/themes?dir=${encodeURIComponent(themesDir.value)}`)).json();
+            themeSelect.innerHTML = '<option value="">(nenhum)</option>' +
+                names.map(n => `<option ${n === saved ? "selected" : ""}>${escape(n)}</option>`).join("");
+            await loadTheme();
+        }
+
+        async function loadTheme() {
+            const name = themeSelect.value;
+            try { localStorage.setItem("theme", name); localStorage.setItem("themesDir", themesDir.value); } catch {}
+            themePrompt = null;
+            if (name) {
+                const res = await fetch(`/themes/${encodeURIComponent(name)}?dir=${encodeURIComponent(themesDir.value)}`);
+                if (res.ok) themePrompt = (await res.json()).prompt;
+            }
+            render();
+        }
+
         function render() {
             preview.style.background = value("Background Color");
             preview.style.color = value("Foreground Color");
@@ -97,7 +151,7 @@
             preview.style.opacity = 1 - value("transparency") / 100;
 
             preview.innerHTML = [
-                `${fg(2, "user@host")}:${fg(4, "~/projetos")}$ ls -la`,
+                `${prompt()}ls -la`,
                 `${fg(12, "drwxr-xr-x")}  ${fg(6, "src")}`,
                 `${fg(1, "error:")} algo falhou`,
                 `${fg(3, "warning:")} atenção`,
@@ -107,12 +161,16 @@
                 palette(0),
                 palette(8),
                 "",
-                `$ <span style="background: ${value("Cursor Color")}; color: ${value("Cursor Text Color")}">_</span>`,
+                `${prompt()}<span style="background: ${value("Cursor Color")}; color: ${value("Cursor Text Color")}">_</span>`,
             ].join("\n");
         }
 
         form.addEventListener("input", render);
+        themesDir.addEventListener("change", loadThemes);
+        themeSelect.addEventListener("change", loadTheme);
+        try { themesDir.value = localStorage.getItem("themesDir") || themesDir.value; } catch {}
         render();
+        loadThemes();
     </script>
 </body>
 </html>
